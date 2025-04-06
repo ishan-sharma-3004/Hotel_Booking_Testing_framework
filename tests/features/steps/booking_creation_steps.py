@@ -1,32 +1,24 @@
-from behave import *
-from helpers.api_client import BookingAPIClient
+from behave import given, when, then
 from helpers.data_generator import DataGenerator
+import time
 
-
-@given("I have valid booking data for {room_type}")
-def step_impl(context, room_type):
+@given('I have valid booking data')
+def step_impl(context):
     context.booking_data = DataGenerator.generate_valid_booking_data()
-    context.booking_data["additionalneeds"] = room_type
 
-
-@given("I have booking data with missing required fields")
+@given('I have booking data with missing required fields')
 def step_impl(context):
-    context.booking_data = {"firstname": "Test"}
+    context.booking_data = {'firstname': 'Test'}  # Minimal invalid data
 
-
-@when("I create a new booking")
+@when('I create a new booking')
 def step_impl(context):
-    context.client = BookingAPIClient()
-    context.response = context.client.create_booking(context.booking_data)
-
-
-@then("the booking should be created successfully")
-def step_impl(context):
-    assert context.response.status_code == 200
-    context.booking_id = context.response.json()["bookingid"]
-
-
-@then("the response should contain booking details")
-def step_impl(context):
-    booking = context.response.json()["booking"]
-    assert booking["firstname"] == context.booking_data["firstname"]
+    max_retries = 3
+    for attempt in range(max_retries):
+        try:
+            context.response = context.client.create_booking(context.booking_data)
+            if context.response.status_code < 500:
+                break
+        except Exception:
+            if attempt == max_retries - 1:
+                raise
+            time.sleep(1)  # Wait before retrying

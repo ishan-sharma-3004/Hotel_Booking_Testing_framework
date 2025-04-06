@@ -7,42 +7,42 @@ import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
-from helpers.self_healing import SelfHealing
+from .self_healing import SelfHealing
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
+import requests
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
+
 class BookingAPIClient:
-    """Client for interacting with the RESTful Booker API with self-healing capabilities"""
-
-    def __init__(self, username: Optional[str] = None, password: Optional[str] = None):
-        """
-        Initialize the API client
-
-        Args:
-            username: API username (defaults to environment variable)
-            password: API password (defaults to environment variable)
-        """
-        self.base_url = os.getenv("BASE_URL", "https://restful-booker.herokuapp.com")
-        self.username = username or os.getenv("API_USERNAME", "admin")
-        self.password = password or os.getenv("API_PASSWORD", "password123")
-        self.token: Optional[str] = None
-        self.token_expiry: Optional[datetime] = None
-
-        # Configure session with retry strategy
+    def __init__(self):
         self.session = requests.Session()
-        retries = Retry(
+        retry_strategy = Retry(
             total=3,
             backoff_factor=1,
-            status_forcelist=[500, 502, 503, 504],
-            allowed_methods=["GET", "POST", "PUT", "DELETE"],
+            status_forcelist=[500, 502, 503, 504]
         )
-        self.session.mount("https://", HTTPAdapter(max_retries=retries))
-
-        # Initialize self-healing
-        self._attempt_self_healing()
+        adapter = HTTPAdapter(max_retries=retry_strategy)
+        self.session.mount("https://", adapter)
+        self.base_url = "https://restful-booker.herokuapp.com"
+        
+    def authenticate(self, auth_data):
+        url = f"{self.base_url}/auth"
+        try:
+            response = self.session.post(
+                url,
+                json=auth_data,
+                timeout=10,
+                headers={'Content-Type': 'application/json'}
+            )
+            return response
+        except requests.exceptions.RequestException as e:
+            print(f"Authentication failed: {str(e)}")
+            return None
 
     def _attempt_self_healing(self) -> None:
         """Attempt to recover from previous session state"""
@@ -63,16 +63,21 @@ class BookingAPIClient:
             return False
         return datetime.now() < self.token_expiry
 
-    def authenticate(self) -> requests.Response:
+    def authenticate(self, auth_data=None):
         """
         Authenticate and store token
-
+        
+        Args:
+            auth_data: Optional dict containing username/password
+            
         Returns:
             Response from authentication endpoint
         """
+        if auth_data is None:
+            auth_data = {"username": self.username, "password": self.password}
+        
         url = f"{self.base_url}/auth"
-        data = {"username": self.username, "password": self.password}
-
+        
         # Try to use self-healing token first if available
         if self._is_token_valid():
             logger.info("Using existing valid token")
@@ -81,19 +86,7 @@ class BookingAPIClient:
             response._content = b'{"token":"' + self.token.encode() + b'"}'
             return response
 
-        response = self.session.post(url, json=data)
-
-        if response.status_code == 200:
-            self.token = response.json().get("token")
-            if self.token:
-                # Assume token expires in 1 hour (adjust based on API behavior)
-                self.token_expiry = datetime.now() + timedelta(hours=1)
-                SelfHealing.store_token(self.token)
-                logger.info("Successfully authenticated and stored token")
-            else:
-                logger.warning("Authentication succeeded but no token received")
-
-        return response
+        response = self.session.post(url, json=auth_data)
 
     def create_booking(self, booking_data: Dict[str, Any]) -> requests.Response:
         """

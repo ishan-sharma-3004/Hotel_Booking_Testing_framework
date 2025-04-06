@@ -1,8 +1,9 @@
 import pytest
 import requests
-
-from helpers.api_client import BookingAPIClient
-from helpers.data_generator import DataGenerator
+import allure
+from ..helpers.api_client import BookingAPIClient
+from ..helpers.data_generator import DataGenerator
+from ..helpers.self_healing import SelfHealing
 
 
 class TestUpdateBooking:
@@ -26,60 +27,77 @@ class TestUpdateBooking:
             "Authorization": f"Bearer {self.api_client.token}",
         }
 
+    @allure.feature("Booking")
+    @allure.story("Update Booking")
     def test_update_existing_booking(self):
         """Test updating an existing booking"""
         updated_data = self.booking_data.copy()
         updated_data["firstname"] = "UpdatedName"
         updated_data["additionalneeds"] = "Lunch"
+        
+        with allure.step(f"Update booking with ID {self.booking_id}"):
+            response = requests.put(
+                f"{self.base_url}/{self.booking_id}",
+                headers=self.headers,
+                json=updated_data,
+            )
+        
+        with allure.step("verify update was successful"):
+            assert response.status_code == 200
 
-        response = requests.put(
-            f"{self.base_url}/{self.booking_id}",
-            headers=self.headers,
-            json=updated_data,
-        )
+            # Verify changes
+            get_response = requests.get(f"{self.base_url}/{self.booking_id}")
+            updated_booking = get_response.json()
+            assert updated_booking["firstname"] == "UpdatedName"
+            assert updated_booking["additionalneeds"] == "Lunch"
 
-        assert response.status_code == 200
-
-        # Verify changes
-        get_response = requests.get(f"{self.base_url}/{self.booking_id}")
-        updated_booking = get_response.json()
-        assert updated_booking["firstname"] == "UpdatedName"
-        assert updated_booking["additionalneeds"] == "Lunch"
-
+    @allure.feature("Booking")
+    @allure.story("Update Booking with Invalid Data")
     def test_update_booking_with_invalid_data(self):
         """Test updating a booking with invalid data"""
         invalid_data = {"firstname": ""}  # Empty firstname
 
-        response = requests.put(
-            f"{self.base_url}/{self.booking_id}",
-            headers=self.headers,
-            json=invalid_data,
-        )
+        with allure.step(f"Attempt to update booking with invalid data"):
+            response = requests.put(
+                f"{self.base_url}/{self.booking_id}",
+                headers=self.headers,
+                json=invalid_data,
+            )
 
-        assert response.status_code == 400  # Bad request
+        with allure.step("Verify update failed"):
+            # Verify update failed
+            assert response.status_code == 400  # Bad request
 
+    @allure.feature("Booking")
+    @allure.story("Update Booking Without Authentication")
     def test_update_booking_without_auth(self):
         """Test updating a booking without authentication"""
         updated_data = self.booking_data.copy()
         updated_data["firstname"] = "ShouldNotUpdate"
 
-        response = requests.put(
-            f"{self.base_url}/{self.booking_id}",
-            headers={"Content-Type": "application/json"},
-            json=updated_data,
-        )
+        with allure.step(f"Attempt to update booking without auth headers"):
+            response = requests.put(
+                f"{self.base_url}/{self.booking_id}",
+                headers={"Content-Type": "application/json"},
+                json=updated_data,
+            )
+        
+        with allure.step("Verify update failed"):
+            assert response.status_code == 403  # Forbidden
 
-        assert response.status_code == 403  # Forbidden
-
+    @allure.feature("Booking")
+    @allure.story("Update Non-Existent Booking")
     def test_update_nonexistent_booking(self):
         """Test updating a non-existent booking"""
         non_existent_id = 999999
         updated_data = self.booking_data.copy()
 
-        response = requests.put(
-            f"{self.base_url}/{non_existent_id}",
-            headers=self.headers,
-            json=updated_data,
-        )
+        with allure.step(f"Attempt to update non-existent booking"):
+            response = requests.put(
+                f"{self.base_url}/{non_existent_id}",
+                headers=self.headers,
+                json=updated_data,
+            )
 
-        assert response.status_code == 405  # Method not allowed
+        with allure.step("Verify update failed"):
+            assert response.status_code == 405  # Method not allowed

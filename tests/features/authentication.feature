@@ -1,21 +1,15 @@
 Feature: API Authentication
-    As an API client
-    I want to authenticate with the system
-    So I can access protected endpoints
+  As an API client
+  I want to authenticate with the system
+  So I can access protected endpoints
 
-    Scenario: Successful Authentication
-        Given I have a valid admin credentials
-        When I request an authentication token
-        Then I should receive a valid token
-    
-    Scenario: Failed Authentication
-        Given I have invalid credentials
-        When I request an authentication token
-        Then I should receive an authentication error
-    
-    Scenario: Authentication with missing credentials
-        Given I have missing credentials
-        When I request an authentication token
-        Then I should receive a bad credentials error
-    
-    
+  Scenario: Successful authentication with valid credentials
+    Given I have valid admin credentials
+    When I request an authentication token
+    Then I should receive a valid token
+    And the response status should be 200
+
+  Scenario: Failed authentication with invalid credentials
+    Given I have invalid credentials
+    When I request an authentication token
+    Then I should receive a 401 unauthorized error

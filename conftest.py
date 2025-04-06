@@ -1,9 +1,7 @@
 import logging
-
 import pytest
-
-from helpers.api_client import BookingAPIClient
-from helpers.data_generator import DataGenerator
+from .helpers.api_client import BookingAPIClient
+from .helpers.data_generator import DataGenerator
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
