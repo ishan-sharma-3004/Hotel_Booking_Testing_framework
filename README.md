@@ -63,7 +63,7 @@ A pytest based framework for testing the RESTful Booking API  with self healing 
     behave -f html -o reports/test_report.html tests/features
     ```
 
-8. Run with Tox(Multiple Python Versions)
+10. Run with Tox(Multiple Python Versions)
     ```bash
     tox
     ```
