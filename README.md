@@ -50,8 +50,20 @@ A pytest based framework for testing the RESTful Booking API  with self healing 
     ```bash
     pytest tests/ -n auto
     ```
+7. Run feature tests:
+    ```bash
+    behave tests/features
+    ```
+8.  Run with increased timeout:
+    ```bash
+    BEHAVE_TIMEOUT=30 behave tests/features
+    ```
+9. Run with HTML report:
+    ```bash
+    behave -f html -o reports/test_report.html tests/features
+    ```
 
-7. Run with Tox(Multiple Python Versions)
+8. Run with Tox(Multiple Python Versions)
     ```bash
     tox
     ```
