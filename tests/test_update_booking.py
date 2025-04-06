@@ -34,14 +34,14 @@ class TestUpdateBooking:
         updated_data = self.booking_data.copy()
         updated_data["firstname"] = "UpdatedName"
         updated_data["additionalneeds"] = "Lunch"
-        
+
         with allure.step(f"Update booking with ID {self.booking_id}"):
             response = requests.put(
                 f"{self.base_url}/{self.booking_id}",
                 headers=self.headers,
                 json=updated_data,
             )
-        
+
         with allure.step("verify update was successful"):
             assert response.status_code == 200
 
@@ -81,7 +81,7 @@ class TestUpdateBooking:
                 headers={"Content-Type": "application/json"},
                 json=updated_data,
             )
-        
+
         with allure.step("Verify update failed"):
             assert response.status_code == 403  # Forbidden
 

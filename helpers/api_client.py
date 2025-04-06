@@ -18,18 +18,19 @@ import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
+
 class BookingAPIClient:
     def __init__(self):
         self.session = requests.Session()
         retry_strategy = Retry(
-            total=3,
-            backoff_factor=1,
-            status_forcelist=[500, 502, 503, 504]
+            total=3, backoff_factor=1, status_forcelist=[500, 502, 503, 504]
         )
         adapter = HTTPAdapter(max_retries=retry_strategy)
         self.session.mount("https://", adapter)
+        self.token = None
+        self.token_expiry = None
         self.base_url = "https://restful-booker.herokuapp.com"
-        
+
     def authenticate(self, auth_data):
         url = f"{self.base_url}/auth"
         try:
@@ -37,7 +38,7 @@ class BookingAPIClient:
                 url,
                 json=auth_data,
                 timeout=10,
-                headers={'Content-Type': 'application/json'}
+                headers={"Content-Type": "application/json"},
             )
             return response
         except requests.exceptions.RequestException as e:
@@ -66,18 +67,18 @@ class BookingAPIClient:
     def authenticate(self, auth_data=None):
         """
         Authenticate and store token
-        
+
         Args:
             auth_data: Optional dict containing username/password
-            
+
         Returns:
             Response from authentication endpoint
         """
         if auth_data is None:
             auth_data = {"username": self.username, "password": self.password}
-        
+
         url = f"{self.base_url}/auth"
-        
+
         # Try to use self-healing token first if available
         if self._is_token_valid():
             logger.info("Using existing valid token")

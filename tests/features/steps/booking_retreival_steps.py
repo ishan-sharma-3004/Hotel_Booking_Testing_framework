@@ -4,11 +4,13 @@ from helpers.api_client import BookingAPIClient
 from helpers.data_generator import DataGenerator
 from booking_steps import *
 
-@when('I retrieve the booking details')
+
+@when("I retrieve the booking details")
 def step_impl(context):
     context.response = context.client.get_booking(context.booking_id)
 
-@then('the booking details should be complete')
+
+@then("the booking details should be complete")
 def step_impl(context):
     booking = context.response.json()
     assert "firstname" in booking

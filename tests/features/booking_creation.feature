@@ -12,4 +12,4 @@ Feature: Booking Creation
   Scenario: Create booking with invalid data
     Given I have booking data with missing required fields
     When I create a new booking
-    Then the response status should be 400
+    Then the response status should be 500

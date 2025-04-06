@@ -43,7 +43,7 @@ class TestDeleteBooking:
             get_response = requests.get(f"{self.base_url}/{self.booking_id}")
             assert get_response.status_code == 404
 
-            #Self-healing: remove deleted booking ID
+            # Self-healing: remove deleted booking ID
             SelfHealing.remove_booking_id(self.booking_id)
 
     @allure.feature("Booking")
@@ -76,7 +76,6 @@ class TestDeleteBooking:
 
         with allure.step("Verify deletion failed"):  # with allure
             assert response.status_code == 405  # Method not allowed
-
 
     @allure.feature("Booking")
     @allure.story("Delete Already Deleted Booking")

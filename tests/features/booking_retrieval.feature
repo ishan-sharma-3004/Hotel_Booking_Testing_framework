@@ -12,4 +12,4 @@ Feature: Booking Retrieval
   Scenario: Get non-existent booking
     Given I have an invalid booking ID
     When I retrieve the booking details
-    Then the response status should be 200
+    Then the response status should be 404

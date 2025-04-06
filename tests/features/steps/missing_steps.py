@@ -1,30 +1,17 @@
-from behave import given, when, then
-from helpers.data_generator import DataGenerator
+from behave import given, then
 
-@given('I have a previously deleted booking ID')
+@then('the response should contain a booking ID')
 def step_impl(context):
-    # Create and then delete a booking
-    booking_data = DataGenerator.generate_valid_booking_data()
-    response = context.client.create_booking(booking_data)
-    booking_id = response.json()["bookingid"]
-    context.client.delete_booking(booking_id)
-    context.booking_id = booking_id
+    assert hasattr(context, 'response'), "No response in context"
+    assert 'bookingid' in context.response.json(), "No booking ID in response"
 
-@given('I have valid update data')
+@given('I have an invalid booking ID')
 def step_impl(context):
-    context.update_data = {
-        "firstname": "UpdatedName",
-        "totalprice": 999
-    }
+    context.booking_id = "invalid_id_123"
 
-@when('I update the booking')
+@then('the booking should reflect the changes')
 def step_impl(context):
-    context.response = context.client.update_booking(
-        context.booking_id,
-        context.update_data,
-        token=context.token
-    )
-
-@given('I am not authenticated')
-def step_impl(context):
-    context.token = None  # Explicitly clear any existing token
+    response = context.client.get_booking(context.booking_id)
+    booking = response.json()
+    for key, value in context.update_data.items():
+        assert booking[key] == value, f"{key} not updated correctly"
